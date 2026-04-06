@@ -19,6 +19,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	virtual AActor* GetPreferredFollowTarget() const override;
+	virtual bool SupportsFreeCameraMode() const override;
 
 	// Input handlers (rebound to support multi-drone routing)
 	void OnInputStarted();

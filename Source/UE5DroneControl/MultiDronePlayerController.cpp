@@ -64,6 +64,7 @@ void AMultiDronePlayerController::SetupInputComponent()
 		InputComponent->BindAction("SwitchToDrone1", IE_Pressed, this, &AMultiDronePlayerController::SwitchToDrone1);
 		InputComponent->BindAction("SwitchToDrone2", IE_Pressed, this, &AMultiDronePlayerController::SwitchToDrone2);
 		InputComponent->BindAction("SwitchToDrone3", IE_Pressed, this, &AMultiDronePlayerController::SwitchToDrone3);
+		BindSharedCameraInput();
 	}
 }
 
@@ -79,7 +80,7 @@ void AMultiDronePlayerController::OnSetDestinationTriggered()
 	UpdateCachedDestination();
 
 	APawn* ControlledPawn = GetPawn();
-	if (ControlledPawn != nullptr)
+	if (!IsInFreeCameraMode() && ControlledPawn != nullptr)
 	{
 		const FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
 		ControlledPawn->AddMovementInput(WorldDirection, 1.0f, false);
@@ -88,7 +89,7 @@ void AMultiDronePlayerController::OnSetDestinationTriggered()
 
 void AMultiDronePlayerController::OnSetDestinationReleased()
 {
-	if (FollowTime <= ShortPressThreshold)
+	if (!IsInFreeCameraMode() && FollowTime <= ShortPressThreshold)
 	{
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, CachedDestination);
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CachedDestination, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
@@ -148,13 +149,31 @@ void AMultiDronePlayerController::SwitchToTopDownCharacter()
 	APawn* ControlledPawn = GetPawn();
 	if (ControlledPawn)
 	{
-		SetViewTargetWithBlend(ControlledPawn, 0.5f);
+		SetFollowViewTarget(ControlledPawn);
 	}
 
 	if (CachedManager)
 	{
 		CachedManager->ActiveDroneIndex = -1;
 	}
+}
+
+AActor* AMultiDronePlayerController::GetPreferredFollowTarget() const
+{
+	if (CachedManager)
+	{
+		if (ARealTimeDroneReceiver* ActiveReceiver = CachedManager->GetActiveReceiver())
+		{
+			return ActiveReceiver;
+		}
+	}
+
+	return AUE5DroneControlPlayerController::GetPreferredFollowTarget();
+}
+
+bool AMultiDronePlayerController::SupportsFreeCameraMode() const
+{
+	return CachedManager && CachedManager->DroneReceivers.Num() > 1;
 }
 
 void AMultiDronePlayerController::SwitchToDrone1()
@@ -186,7 +205,14 @@ void AMultiDronePlayerController::SwitchToDroneIndex(int32 Index)
 
 	if (CachedManager)
 	{
-		CachedManager->SwitchToDrone(Index);
+		if (!CachedManager->DroneReceivers.IsValidIndex(Index) || !CachedManager->DroneReceivers[Index])
+		{
+			UE_LOG(LogUE5DroneControl, Warning, TEXT("MultiDroneManager: Invalid drone index %d"), Index);
+			return;
+		}
+
+		CachedManager->ActiveDroneIndex = Index;
+		SetFollowViewTarget(CachedManager->DroneReceivers[Index], !IsInFreeCameraMode());
 	}
 	else
 	{

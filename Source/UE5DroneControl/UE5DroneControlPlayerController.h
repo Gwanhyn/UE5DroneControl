@@ -11,6 +11,7 @@ class UNiagaraSystem;
 class UInputMappingContext;
 class UInputAction;
 class UPathFollowingComponent;
+class ADroneFreeCameraPawn;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -66,6 +67,9 @@ public:
 	/** Constructor */
 	AUE5DroneControlPlayerController();
 
+	UFUNCTION(BlueprintPure, Category = "Camera")
+	bool IsInFreeCameraMode() const { return bIsFreeCameraMode; }
+
 protected:
 
 	/** Initialize input bindings */
@@ -84,15 +88,46 @@ protected:
 
 	// --- 【新增】视角切换函数 ---
 	/** Switch camera to TopDown character (key 0) */
-	void SwitchToTopDownCharacter();
+	virtual void SwitchToTopDownCharacter();
 
 	/** Switch camera to RealTime drone (key 1) */
 	void SwitchToRealTimeDrone();
+
+	virtual AActor* GetPreferredFollowTarget() const;
+	virtual bool SupportsFreeCameraMode() const;
+
+	void BindSharedCameraInput();
+	void ToggleFreeCameraMode();
+	void MoveFreeCameraForward(float Value);
+	void MoveFreeCameraRight(float Value);
+	void MoveFreeCameraUp(float Value);
+	void LookFreeCameraYaw(float Value);
+	void LookFreeCameraPitch(float Value);
+	void SetFollowViewTarget(AActor* NewTarget, bool bBlendImmediately = true);
+
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	TSubclassOf<ADroneFreeCameraPawn> FreeCameraPawnClass;
+
+	UPROPERTY(EditAnywhere, Category = "Camera", meta = (ClampMin = "0.0"))
+	float CameraBlendTime = 0.35f;
 
 private:
 	/** Reference to the RealTime drone actor */
 	UPROPERTY()
 	class ARealTimeDroneReceiver* CachedRealTimeDrone;
+
+	UPROPERTY()
+	TObjectPtr<ADroneFreeCameraPawn> FreeCameraPawn;
+
+	UPROPERTY()
+	TObjectPtr<AActor> CachedFollowTarget;
+
+	bool bIsFreeCameraMode = false;
+
+	bool EnsureFreeCameraPawn();
+	void EnterFreeCameraMode();
+	void ExitFreeCameraMode();
+	AActor* ResolveFollowTarget() const;
 
 	// --- 点击目标点持续发送（由角色处理） ---
 };

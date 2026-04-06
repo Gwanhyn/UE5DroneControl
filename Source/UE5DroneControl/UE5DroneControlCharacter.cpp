@@ -21,6 +21,7 @@
 // 【新增】用于视角切换
 #include "Kismet/GameplayStatics.h"
 #include "RealTimeDroneReceiver.h"
+#include "UE5DroneControlPlayerController.h"
 
 AUE5DroneControlCharacter::AUE5DroneControlCharacter()
 {
@@ -140,17 +141,18 @@ void AUE5DroneControlCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 
     // 绑定 "Lift" 轴
     PlayerInputComponent->BindAxis("Lift", this, &AUE5DroneControlCharacter::Input_Lift);
-
-    // 绑定空格键切换相机视角
-    PlayerInputComponent->BindAction("ToggleCamera", IE_Pressed, this, &AUE5DroneControlCharacter::ToggleCameraView);
-
-    // 绑定数字键0和1切换视角
-    PlayerInputComponent->BindAction("SwitchToTopDown", IE_Pressed, this, &AUE5DroneControlCharacter::SwitchToTopDownView);
-    PlayerInputComponent->BindAction("SwitchToRealTime", IE_Pressed, this, &AUE5DroneControlCharacter::SwitchToRealTimeView);
 }
 
 void AUE5DroneControlCharacter::Input_Lift(float Value)
 {
+    if (const AUE5DroneControlPlayerController* DroneController = Cast<AUE5DroneControlPlayerController>(GetController()))
+    {
+        if (DroneController->IsInFreeCameraMode())
+        {
+            return;
+        }
+    }
+
     if (Value != 0.0f)
     {
         float Delta = Value * LiftSpeed * GetWorld()->GetDeltaSeconds();
