@@ -1,0 +1,45 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+storage:
+  path: "data/drone_registry.json"
+
+slots:
+  1:
+    control_port: 8889
+    telemetry_port: 8888
+    topic_prefix: "/px4_1"
+    mavlink_system_id: 2
+    bit_index: 0
+  2:
+    control_port: 8891
+    telemetry_port: 8890
+    topic_prefix: "/px4_2"
+    mavlink_system_id: 3
+    bit_index: 1
+  3:
+    control_port: 8893
+    telemetry_port: 8892
+    topic_prefix: "/px4_3"
+    mavlink_system_id: 4
+    bit_index: 2
+  4:
+    control_port: 8895
+    telemetry_port: 8894
+    topic_prefix: "/px4_4"
+    mavlink_system_id: 5
+    bit_index: 3
+  5:
+    control_port: 8897
+    telemetry_port: 8896
+    topic_prefix: "/px4_5"
+    mavlink_system_id: 6
+    bit_index: 4
+  6:
+    # 8899 is reserved by the unified multi-drone controller.
+    control_port: 8901
+    telemetry_port: 8900
+    topic_prefix: "/px4_6"
+    mavlink_system_id: 7
+    bit_index: 5
